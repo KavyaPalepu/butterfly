@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Preview Image</title>
+</head>
+<body>
+    <h2>Preview Uploaded Image</h2>
+    <img src="{{ image_path }}" width="300">
+    <form action="/predict" method="post">
+        <input type="hidden" name="image_path" value="{{ image_path }}">
+        <button type="submit">Predict</button>
+    </form>
+    <a href="/">Back</a>
+</body>
+</html>
