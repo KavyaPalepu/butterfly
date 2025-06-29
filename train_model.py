@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import tensorflow as tf
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.keras.applications import VGG16
+from tensorflow.keras.applications import MobileNetV2
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, Flatten
 from tensorflow.keras.optimizers import Adam
@@ -11,19 +11,20 @@ from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 # === Dataset path
 BASE_PATH = "archive"
 
-# === Load the CSV and rename columns
+# === Load CSV and clean columns
 train_df = pd.read_csv(os.path.join(BASE_PATH, "Training_set.csv"))
 train_df.rename(columns={"Filename": "filename", "Class": "label"}, inplace=True)
-
-# === Add full image paths
 train_df['filepath'] = train_df['filename'].apply(lambda x: os.path.join(BASE_PATH, "train", x))
 
-# === Model parameters
-img_size = (224, 224)
+# === Optional: Use a subset for faster testing (remove this for full training)
+# train_df = train_df.sample(frac=0.3, random_state=42)
+
+# === Image and training config
+img_size = (160, 160)
 batch_size = 32
 num_classes = train_df['label'].nunique()
 
-# === Image data generators
+# === Data generators
 datagen = ImageDataGenerator(rescale=1./255, validation_split=0.2)
 
 train_gen = datagen.flow_from_dataframe(
@@ -48,11 +49,11 @@ val_gen = datagen.flow_from_dataframe(
     shuffle=True
 )
 
-# === Load VGG16 base model
-base_model = VGG16(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
-base_model.trainable = False
+# === Load MobileNetV2 base
+base_model = MobileNetV2(weights='imagenet', include_top=False, input_shape=(160, 160, 3))
+base_model.trainable = False  # Freeze base layers
 
-# === Add custom classifier on top
+# === Build classifier
 model = Sequential([
     base_model,
     Flatten(),
@@ -71,10 +72,11 @@ model.compile(optimizer=Adam(learning_rate=0.0001),
 checkpoint = ModelCheckpoint("vgg16_model.h5", save_best_only=True, monitor='val_accuracy', mode='max')
 early_stop = EarlyStopping(monitor='val_accuracy', patience=5)
 
-# === Train the model
+# === Train the model (with multiprocessing)
 model.fit(
     train_gen,
     validation_data=val_gen,
     epochs=15,
     callbacks=[checkpoint, early_stop]
 )
+

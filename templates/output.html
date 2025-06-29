@@ -6,8 +6,14 @@
 <body>
     <h2>Prediction Result</h2>
     <img src="{{ image_path }}" alt="Uploaded Image" width="300">
-    <p><strong>Predicted Species:</strong> {{ label }}</p>
-    <p><strong>Confidence:</strong> {{ '%.2f' % confidence }}%</p>
+
+    <h3>Top 3 Predictions:</h3>
+    <ol>
+        {% for label, confidence in top_preds %}
+            <li><strong>{{ label }}</strong> — {{ '%.2f' % confidence }}%</li>
+        {% endfor %}
+    </ol>
+
     <a href="/">Try another image</a>
 </body>
 </html>
